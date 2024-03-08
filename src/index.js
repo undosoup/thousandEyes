@@ -68,37 +68,63 @@ const eyes = () => {
     return eyes
 }
 
+function exponentialMovingAverage(momentum) {
+    if (momentum == undefined) {
+        momentum = 0.9
+    }
+    let ema = undefined
+    let get = () => { return ema }
+    let update = (x) => {
+        if (ema === undefined) {
+            ema = x
+        }
+        ema = ema * momentum + (1 - momentum) * x
+
+    }
+    return [get, update]
+}
+
+// create n eyes in svg element with randomly chosen centers
+// tries to fill space using a heuristic: we choose a random
+// center and check biggest eye that can be drawn there, we
+// keep a moving average of these observations and only draw
+// the eye if we exceed a reasonable threshold
 function createEyes(svg, n) {
-    let min_size = 0.5
-    let max_size = 0.9
     let centers = []
     let sizes = []
     const width = parseFloat(svg.getAttribute("width"))
     const height = parseFloat(svg.getAttribute("height"))
+    const max_size = 0.2 * Math.min(width, height)
 
-    // choose random centers for eyes
-    for (let i = 0; i < n; i++) {
-        centers.push({
-            cx: Math.random() * width,
-            cy: Math.random() * height,
-        })
-        sizes.push(0.0)
+    // exponential moving average of space around a randomly chosen point
+    let [getEmaSpace, updateEmaSpace] = exponentialMovingAverage(0.99)
+
+    let spaceAround = (cx, cy) => {
+        let space = Math.min(cx, width - cx, cy, height - cy)
+        for (let i = 0; i < centers.length; i++) {
+            let dx = centers[i].cx - cx
+            let dy = centers[i].cy - cy
+            let size = (sizes[i] || 0)
+            let distance = Math.max(norm(dx, dy) - size, 0)
+            space = Math.min(space, distance)
+        }
+        return space
     }
 
-    // choose random sizes for eyes, without overlapping
-    for (let i = 0; i < n; i++) {
-        let available_space = (() => {
-            let { cx, cy } = centers[i]
-            let min = Math.min(cx, width - cx, cy, height - cy)
-            for (let j = 0; j < n; j++) {
-                if (j == i) { continue }
-                let distance = norm(centers[j].cx - cx, centers[j].cy - cy)
-                min = Math.min(min, distance - sizes[j])
-            }
-            return min
-        })()
-        let size = (min_size + Math.random() * (max_size - min_size)) * available_space
-        sizes[i] = size
+    // choose random centers for eyes
+    while (centers.length < n) {
+        let cx = Math.random() * width
+        let cy = Math.random() * height
+        let space = spaceAround(cx, cy)
+        updateEmaSpace(space)
+        if (space >= getEmaSpace()) {
+            let size = (0.8 + Math.random() * 0.15) * Math.min(space, max_size)
+            centers.push({
+                cx: cx,
+                cy: cy,
+            })
+            sizes.push(size)
+        }
     }
 
     // really make the eyes
@@ -141,5 +167,10 @@ function gaussianIsh() {
 }
 
 createEyes(document.querySelector("svg"), 500)
+// goggle burn-in
+for (let i = 0; i < 50; i++) {
+    eyes().forEach((eye) => { eye.update(); eye.render() })
+}
+
 window.onmousemove = () => { eyes().forEach((eye) => { eye.update(); eye.render() }) }
 

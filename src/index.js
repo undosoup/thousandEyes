@@ -1,14 +1,18 @@
-const eyes = () => {
+const svgns = "http://www.w3.org/2000/svg"
+
+
+const eyeStates = () => {
     let eyes = []
     for (let eye of document.querySelectorAll("g.eye")) {
         let margin = 0.7
         let max_speed = 0.08
 
-        let white = eye.querySelector(".white")
-        let pupil = eye.querySelector(".pupil")
-        let max_radius = white.getAttribute("r") - pupil.getAttribute("r")
-        let cx = parseFloat(white.getAttribute("cx"))
-        let cy = parseFloat(white.getAttribute("cy"))
+        const white = eye.querySelector(".white")
+        const pupil = eye.querySelector(".pupil")
+        const max_radius = white.getAttribute("r") - pupil.getAttribute("r")
+        const white_radius = white.getAttribute("r")
+        const cx = parseFloat(white.getAttribute("cx"))
+        const cy = parseFloat(white.getAttribute("cy"))
 
         // state
         let pupilState = {
@@ -49,13 +53,20 @@ const eyes = () => {
         // DOM update callback
         let render = () => {
             let { dx, dy } = pupilState
-            let radius = norm(dx, dy)
+            const radius = norm(dx, dy)
             if (radius > margin * max_radius) {
                 dx = dx * margin * max_radius / radius
                 dy = dy * margin * max_radius / radius
             }
-            pupil.setAttribute("cx", cx + dx)
-            pupil.setAttribute("cy", cy + dy)
+            const theta = Math.asin(norm(dx, dy) / white_radius)
+            const phi = (dx) ? (180 * Math.atan(dy / dx) / Math.PI) : 90
+            const scale = `scale(${Math.cos(theta)}, 1.0)`
+            const rotate = `rotate(${phi})`
+            const toOrigin = `translate(${-cx}, ${-cy})`
+            const andBack = `translate(${cx}, ${cy})`
+            const look = `translate(${dx}, ${dy})`
+            const transform = `${look} ${andBack} ${rotate} ${scale} ${toOrigin}`
+            pupil.setAttribute("transform", transform)
         }
 
         eyes.push({
@@ -116,15 +127,19 @@ function createEyes(svg, n) {
         let cx = Math.random() * width
         let cy = Math.random() * height
         let space = spaceAround(cx, cy)
-        updateEmaSpace(space)
-        if (space >= getEmaSpace()) {
-            let size = (0.8 + Math.random() * 0.15) * Math.min(space, max_size)
-            centers.push({
-                cx: cx,
-                cy: cy,
-            })
-            sizes.push(size)
+        if (space <= 0) {
+            continue
         }
+        updateEmaSpace(space)
+        if (space < getEmaSpace()) {
+            continue
+        }
+        let size = (0.8 + Math.random() * 0.15) * Math.min(space, max_size)
+        centers.push({
+            cx: cx,
+            cy: cy,
+        })
+        sizes.push(size)
     }
 
     // really make the eyes
@@ -166,11 +181,13 @@ function gaussianIsh() {
     return res - 6
 }
 
-createEyes(document.querySelector("svg"), 500)
+createEyes(document.querySelector("svg"), 1000)
+let myEyeStates = eyeStates()
+
 // goggle burn-in
 for (let i = 0; i < 50; i++) {
-    eyes().forEach((eye) => { eye.update(); eye.render() })
+    myEyeStates.forEach((eye) => { eye.update(); eye.render() })
 }
 
-window.onmousemove = () => { eyes().forEach((eye) => { eye.update(); eye.render() }) }
+window.onmousemove = () => { myEyeStates.forEach((eye) => { eye.update(); eye.render() }) }
 

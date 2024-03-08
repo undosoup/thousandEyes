@@ -1,3 +1,12 @@
+
+let { innerHeight, innerWidth } = window
+let svgWidth = Math.min(0.9 * innerWidth, 1000)
+let svgHeight = Math.min(0.9 * innerHeight, 1000)
+const svg = document.querySelector("svg")
+svg.setAttribute("width", svgWidth)
+svg.setAttribute("height", svgHeight)
+
+
 const eyeStates = () => {
     let eyes = []
     for (let eye of document.querySelectorAll("g.eye")) {

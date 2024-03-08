@@ -5,16 +5,27 @@
     <meta charset="utf-8" />
     <title>Ogle</title>
     <style>
-        .center {
-            margin: auto;
-            width: 90%;
-            text-align: center;
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+        }
+
+        #eye-test-container {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        #eye-test {
+            margin: 0 auto;
+            display: block;
         }
     </style>
 </head>
 
 <body>
-    <div class="center">
+    <div id="eye-test-container">
         <svg id="eye-test" version="1.1" width="600" height="600">
         </svg>
     </div>

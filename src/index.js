@@ -1,16 +1,13 @@
-const svgns = "http://www.w3.org/2000/svg"
-
-
 const eyeStates = () => {
     let eyes = []
     for (let eye of document.querySelectorAll("g.eye")) {
-        let margin = 0.7
-        let max_speed = 0.08
+        const margin = 0.7
+        const max_speed = 0.08
 
         const white = eye.querySelector(".white")
         const pupil = eye.querySelector(".pupil")
         const max_radius = white.getAttribute("r") - pupil.getAttribute("r")
-        const white_radius = white.getAttribute("r")
+        //const white_radius = white.getAttribute("r")
         const cx = parseFloat(white.getAttribute("cx"))
         const cy = parseFloat(white.getAttribute("cy"))
 
@@ -58,15 +55,8 @@ const eyeStates = () => {
                 dx = dx * margin * max_radius / radius
                 dy = dy * margin * max_radius / radius
             }
-            const theta = Math.asin(norm(dx, dy) / white_radius)
-            const phi = (dx) ? (180 * Math.atan(dy / dx) / Math.PI) : 90
-            const scale = `scale(${Math.cos(theta)}, 1.0)`
-            const rotate = `rotate(${phi})`
-            const toOrigin = `translate(${-cx}, ${-cy})`
-            const andBack = `translate(${cx}, ${cy})`
             const look = `translate(${dx}, ${dy})`
-            const transform = `${look} ${andBack} ${rotate} ${scale} ${toOrigin}`
-            pupil.setAttribute("transform", transform)
+            pupil.setAttribute("transform", look)
         }
 
         eyes.push({
